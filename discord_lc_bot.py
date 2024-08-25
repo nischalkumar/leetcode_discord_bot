@@ -150,23 +150,25 @@ def get_user_stats(handle, user_timezone):
     logger.info(f"Processed stats for {handle}: {summary}")
     return summary
 
-def format_user_stats(handle, summary):
-    message = f"Stats for {handle}:\n"
+def format_user_stats_embed(handle, summary):
+    embed = discord.Embed(title=f"🚀 {handle}'s LeetCode Stats", color=0x00ff00)
 
     for day, entries in summary.items():
         if entries:
-            message += f"\n{day.capitalize()}:\n"
+            value = ""
             for entry in entries:
-                problem_url = get_leetcode_problem_url(entry.get('titleSlug', None))
-                message += f" - Title: [{entry['title']}]({problem_url}), Difficulty: {entry['difficulty']}, Date: {entry['date']}\n"
+                problem_url = get_leetcode_problem_url(entry['titleSlug'])
+                value += f"[{entry['title']}]({problem_url}) | Difficulty: `{entry['difficulty']}` | Date: `{entry['date']}`\n"
+            embed.add_field(name=f"📅 {day.capitalize()}:", value=value, inline=False)
         else:
-            message += f"\n{day.capitalize()}: No problems solved.\n"
+            embed.add_field(name=f"📅 {day.capitalize()}:", value="No problems solved.", inline=False)
 
-    message += "\nSummary:\n"
+    summary_text = ""
     for day, entries in summary.items():
-        message += f"{day.capitalize()} -> Total: {len(entries)} problems solved.\n"
-
-    return message
+        summary_text += f"{day.capitalize()} -> Total: `{len(entries)}` problems solved.\n"
+    
+    embed.add_field(name="📝 Summary:", value=summary_text, inline=False)
+    return embed
 
 async def get_all_user_stats():
     all_stats = {}
@@ -179,16 +181,6 @@ async def get_all_user_stats():
             all_stats[username] = summary
     logger.info("all stats %s", all_stats)
     return all_stats
-
-
-def format_all_user_stats(all_stats):
-    message = "All User Stats:\n"
-    for username, summary in all_stats.items():
-        message += f"\n**{username}**\n"
-        message += format_user_stats(username, summary)
-        message += "\n"
-    return message
-
 
 @bot.event
 async def on_ready():
@@ -236,8 +228,8 @@ async def user_stats(interaction: discord.Interaction):
         await interaction.followup.send("Failed to retrieve user stats. Please check your handle or try again later.")
         return
 
-    message = format_user_stats(interaction.user.name, summary)
-    await interaction.followup.send(message)
+    embed = format_user_stats_embed(interaction.user.name, summary)
+    await interaction.followup.send(embed=embed)
 
 @tree.command(name="all_user_stats", description="Get LeetCode stats for all users")
 async def all_user_stats(interaction: discord.Interaction):
@@ -245,7 +237,7 @@ async def all_user_stats(interaction: discord.Interaction):
         await interaction.response.send_message("No handles have been added.")
         return
 
-    initial_response = await interaction.response.send_message("Fetching LeetCode stats for all users, this may take a moment...")
+    await interaction.response.send_message("Fetching LeetCode stats for all users, this may take a moment...")
 
     # Await the coroutine to get the actual result
     all_stats = await get_all_user_stats()
@@ -254,12 +246,10 @@ async def all_user_stats(interaction: discord.Interaction):
         await interaction.followup.send("Failed to retrieve stats for all users. Please try again later.")
         return
 
-    message = format_all_user_stats(all_stats)
-    await interaction.followup.send(message)
-
-#load_user_data()
-#print(format_all_user_stats(get_all_user_stats()))
+    for username, summary in all_stats.items():
+        embed = format_user_stats_embed(username, summary)
+        await interaction.followup.send(embed=embed)
 
 # Run the bot
-bot.run('dicord bot id')
+bot.run('your_discord_bot_token')
 
