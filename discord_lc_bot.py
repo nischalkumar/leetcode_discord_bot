@@ -217,7 +217,7 @@ async def list_handles(interaction: discord.Interaction):
         handles = "\n".join([f"{user}: {data['handle']} (Timezone: {data['timezone']})" for user, data in user_data.items()])
         await interaction.response.send_message(f"Added handles:\n{handles}")
 
-@tree.command(name="user_stats", description="Get your LeetCode stats")
+#@tree.command(name="user_stats", description="Get your LeetCode stats")
 async def user_stats(interaction: discord.Interaction):
     user_info = user_data.get(interaction.user.name)
     if not user_info:
