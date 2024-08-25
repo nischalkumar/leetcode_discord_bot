@@ -33,10 +33,6 @@ TIMEZONE_MAPPING = {
     # Add more mappings as needed
 }
 
-# Function to get formatted LeetCode profile URL
-def get_leetcode_profile_url(id):
-    return f"https://leetcode.com/problems/{id}"
-
 # Load user data from disk
 def load_user_data():
     global user_data
@@ -46,6 +42,10 @@ def load_user_data():
             logger.info("User data loaded from disk.")
     except FileNotFoundError:
         logger.info("No existing user data file found. Starting fresh.")
+
+def get_leetcode_problem_url(slug) :
+    logger.info("leetcode url generator called")
+    return f"https://leetcode.com/problems/{slug}"
 
 # Save user data to disk
 def save_user_data():
@@ -131,7 +131,7 @@ def get_user_stats(handle, user_timezone):
             continue
 
         entry = {
-            'slug':submission['titleSlug'],
+            'titleSlug': submission['titleSlug'],
             'title': submission['title'],
             'difficulty': difficulty,
             'date': submission_date.isoformat()
@@ -147,7 +147,6 @@ def get_user_stats(handle, user_timezone):
     logger.info(f"Processed stats for {handle}: {summary}")
     return summary
 
-
 def format_user_stats(handle, summary):
     message = f"Stats for {handle}:\n"
 
@@ -155,7 +154,7 @@ def format_user_stats(handle, summary):
         if entries:
             message += f"\n{day.capitalize()}:\n"
             for entry in entries:
-                problem_url = get_leetcode_profile_url(entry.get('slug', None))
+                problem_url = get_leetcode_problem_url(entry.get('titleSlug', None))
                 message += f" - Title: [{entry['title']}]({problem_url}), Difficulty: {entry['difficulty']}, Date: {entry['date']}\n"
         else:
             message += f"\n{day.capitalize()}: No problems solved.\n"
@@ -165,6 +164,28 @@ def format_user_stats(handle, summary):
         message += f"{day.capitalize()} -> Total: {len(entries)} problems solved.\n"
 
     return message
+
+async def get_all_user_stats():
+    all_stats = {}
+    for username, data in user_data.items():
+        handle = data['handle']
+        timezone = data['timezone']
+        logger.info("starting for user {timezone} {handle}")
+        summary = get_user_stats(handle, timezone)
+        if summary:
+            all_stats[username] = summary
+    logger.info("all stats %s", all_stats)
+    return all_stats
+
+
+def format_all_user_stats(all_stats):
+    message = "All User Stats:\n"
+    for username, summary in all_stats.items():
+        message += f"\n**{username}**\n"
+        message += format_user_stats(username, summary)
+        message += "\n"
+    return message
+
 
 @bot.event
 async def on_ready():
@@ -215,6 +236,27 @@ async def user_stats(interaction: discord.Interaction):
     message = format_user_stats(interaction.user.name, summary)
     await interaction.followup.send(message)
 
+@tree.command(name="all_user_stats", description="Get LeetCode stats for all users")
+async def all_user_stats(interaction: discord.Interaction):
+    if not user_data:
+        await interaction.response.send_message("No handles have been added.")
+        return
+
+    initial_response = await interaction.response.send_message("Fetching LeetCode stats for all users, this may take a moment...")
+
+    # Await the coroutine to get the actual result
+    all_stats = await get_all_user_stats()
+
+    if not all_stats:
+        await interaction.followup.send("Failed to retrieve stats for all users. Please try again later.")
+        return
+
+    message = format_all_user_stats(all_stats)
+    await interaction.followup.send(message)
+
+#load_user_data()
+#print(format_all_user_stats(get_all_user_stats()))
+
 # Run the bot
-bot.run('your bot id here')
+bot.run('dicord bot id')
 
