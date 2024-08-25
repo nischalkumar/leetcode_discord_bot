@@ -30,6 +30,9 @@ LEETCODE_USER_URL = "https://leetcode.com/graphql"
 TIMEZONE_MAPPING = {
     "IST": "Asia/Kolkata",
     "CDT": "America/Chicago",
+    "PDT": "America/Los_Angeles",
+    "PST": "America/Los_Angeles",
+    "EST": "America/New_York",
     # Add more mappings as needed
 }
 
