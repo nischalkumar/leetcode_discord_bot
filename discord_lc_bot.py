@@ -153,12 +153,20 @@ def get_user_stats(handle, user_timezone):
 def format_user_stats_embed(handle, summary):
     embed = discord.Embed(title=f"🚀 {handle}'s LeetCode Stats", color=0x00ff00)
 
+    # Define color representations for difficulty levels
+    difficulty_colors = {
+        "Easy": "🟩 **Easy**",    # Green square for Easy
+        "Medium": "🟧 **Medium**",  # Orange square for Medium
+        "Hard": "🟥 **Hard**"     # Red square for Hard
+    }
+
     for day, entries in summary.items():
         if entries:
             value = ""
             for entry in entries:
                 problem_url = get_leetcode_problem_url(entry['titleSlug'])
-                value += f"[{entry['title']}]({problem_url}) | Difficulty: `{entry['difficulty']}` | Date: `{entry['date']}`\n"
+                difficulty_text = difficulty_colors.get(entry['difficulty'], f"**{entry['difficulty']}**")
+                value += f"{difficulty_text} - [{entry['title']}]({problem_url}) | Date: `{entry['date']}`\n"
             embed.add_field(name=f"📅 {day.capitalize()}:", value=value, inline=False)
         else:
             embed.add_field(name=f"📅 {day.capitalize()}:", value="No problems solved.", inline=False)
@@ -166,9 +174,10 @@ def format_user_stats_embed(handle, summary):
     summary_text = ""
     for day, entries in summary.items():
         summary_text += f"{day.capitalize()} -> Total: `{len(entries)}` problems solved.\n"
-    
+
     embed.add_field(name="📝 Summary:", value=summary_text, inline=False)
     return embed
+
 
 async def get_all_user_stats():
     all_stats = {}
